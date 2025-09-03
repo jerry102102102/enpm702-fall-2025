@@ -1,14 +1,13 @@
 /**
  * @file week1.cpp
- * @author Zeid Kootbally (zeidk@umd.edu)
- * @brief Basic hello world example
+ * @author jerry chuang (jerry@domain.com)
+ * @brief 
  * @version 0.1
- * @date 2025-09-01
+ * @date 2025-09-02
  * 
  * @copyright Copyright (c) 2025
  * 
  */
-
 #include <iostream>
 
 /**
@@ -18,4 +17,5 @@
  */
 int main() {
   std::cout << "Hello, from enpm702_fall2025!\n";
+
 }
