@@ -1,127 +1,257 @@
-#include <iostream>
-#include <iomanip>
 #include <cmath>
+#include <iomanip>
+#include <iostream>
 #include <limits>
 
 int main() {
-  // 固定兩位小數、歡迎訊息
+  // stable two decimal places, cout welcome message
   std::cout << std::fixed << std::setprecision(2);
-  std::cout << "Welcome to ENPM702 RWA1 (simplified).\n";
+  std::cout << "Welcome to the Robot Simulator\n";
 
-  // 機器人狀態（以大括號初始化）
+  // initialize robot state
   double robot_x_position{0.0};
   double robot_y_position{0.0};
   double robot_orientation_deg{0.0};
-  const double pi{3.14159};
-
-  // 主迴圈：直到使用者選擇 Exit
+  // pi constant
+  constexpr double pi{3.14159};
+  int menu_choice{};
+  // main loop for control menu and user input
   while (true) {
-    // --- 顯示選單 ---
-    std::cout << "\n----- Menu -----\n"
-                 " 1) Move Forward (meters)\n"
-                 " 2) Turn Left   (degrees)\n"
-                 " 3) Turn Right  (degrees)\n"
-                 " 4) Get Robot Status\n"
-                 " 5) Exit\n"
-                 " 6) Backward (Bonus, meters)\n"
-                 " 7) Reset Pose (Bonus)\n";
+    // display menu]
+    std::cout << "\n‐‐‐ Robot Menu ‐‐‐\n"
+                 " 1. Move Forward\n"
+                 " 2. Turn Left\n"
+                 " 3. Turn Right\n"
+                 " 4. Get Robot Status\n"
+                 " 5. Exit\n"
+                 " 6. Backward\n"
+                 " 7. Reset Pose\n";
 
-    // 讀選項（只做最基本檢查：是否為數字、是否在 1~7）
-    int menu_choice{};
-    std::cout << "Select (1-7): ";
+    // get user input for menu choice
+    std::cout << "Enter your choice: ";
+    // if encounter wrong input, cin clear error and ignore the rest of the line
     if (!(std::cin >> menu_choice)) {
-      // 遇到非數字：清除錯誤並丟棄整行，回到下一輪
       std::cin.clear();
       std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-      std::cout << "Invalid input. Please enter a number 1-7.\n";
+      std::cout << "Invalid input. Please enter a valid number.\n";
       continue;
     }
-    // 丟棄本行殘留（包含換行）
+    // check for trailing characters
+    {
+      int ch = std::cin.peek();
+      while (std::isspace(ch) && ch != '\n') {
+        std::cin.get();
+        ch = std::cin.peek();
+      }
+      if (ch != '\n') {
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << "Invalid input. Please enter a valid number.\n";
+        continue;
+      }
+    }
+    // ignore the rest of the line in case of extra input
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-    // 只接受 1~7
+    // check if input is in range
     if (menu_choice < 1 || menu_choice > 7) {
-      std::cout << "Out of range. Choose between 1 and 7.\n";
+      std::cout << "Invalid choice. Please enter a number between 1 and 7\n";
       continue;
     }
 
-    // --- 動作分支 ---
-    if (menu_choice == 1 || menu_choice == 6) {
-      // Move Forward / Backward（Backward 只是距離取負號）
-      const bool is_backward = (menu_choice == 6);
-      const char* label = is_backward ? "Backward" : "Forward";
-
-      double distance{};
-      std::cout << label << " distance (meters, > 0): ";
-      if (!(std::cin >> distance)) {
-        std::cin.clear();
+    // action branches
+    switch (menu_choice) {
+      case 1:  // Move Forward
+      {
+        double distance{};
+        std::cout << "Enter distance to move forward (e.g., 5.5):";
+        // validate input
+        if (!(std::cin >> distance)) {
+          std::cin.clear();
+          std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+          std::cout << "Invalid input. Please enter a valid number.\n";
+          continue;
+        }
+        // check for trailing characters
+        {
+          int ch = std::cin.peek();
+          while (std::isspace(ch) && ch != '\n') {
+            std::cin.get();
+            ch = std::cin.peek();
+          }
+          if (ch != '\n') {
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Invalid input. Please enter a valid number.\n";
+            continue;
+          }
+        }
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        std::cout << "Distance must be a number.\n";
-        continue;
+
+        if (distance <= 0.0) {
+          std::cout << "Invalid distance. Please enter a positive number.\n";
+          continue;
+        }
+
+        // calculate new position
+        const double angle_rad = robot_orientation_deg * pi / 180.0;
+        robot_x_position += distance * std::cos(angle_rad);
+        robot_y_position += distance * std::sin(angle_rad);
+
+        // output new position
+        std::cout << "Robot moved " << distance
+                  << " meters forward. New position: " << "("
+                  << robot_x_position << ", " << robot_y_position << ")\n";
+        break;
       }
-      std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-      if (distance <= 0.0) {
-        std::cout << "Distance must be > 0.\n";
-        continue;
-      }
-
-      // Backward 就把距離改為負值，公式相同
-      if (is_backward) distance = -distance;
-
-      // 角度轉弧度 → 更新位置
-      const double theta = robot_orientation_deg * (pi / 180.0);
-      robot_x_position += distance * std::cos(theta);
-      robot_y_position += distance * std::sin(theta);
-
-      std::cout << label << " OK. Position -> x: " << robot_x_position
-                << " m, y: " << robot_y_position << " m\n";
-
-    } else if (menu_choice == 2 || menu_choice == 3) {
-      // Turn Left / Right（Right 就是減角，最後做正規化）
-      const bool is_left = (menu_choice == 2);
-      const char* label = is_left ? "left" : "right";
-
-      double angle{};
-      std::cout << "Turn " << label << " by (degrees, > 0): ";
-      if (!(std::cin >> angle)) {
-        std::cin.clear();
+      case 2: {  // Turn Left
+        double angle{};
+        std::cout << "Enter angle to turn left in degrees s (e.g., 45.0): ";
+        // validate input
+        if (!(std::cin >> angle)) {
+          std::cin.clear();
+          std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+          std::cout << "Invalid input. Please enter a valid number.\n";
+          continue;
+        }
+        // check for trailing characters
+        {
+          int ch = std::cin.peek();
+          while (std::isspace(ch) && ch != '\n') {
+            std::cin.get();
+            ch = std::cin.peek();
+          }
+          if (ch != '\n') {
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Invalid input. Please enter a valid number.\n";
+            continue;
+          }
+        }
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        std::cout << "Angle must be a number.\n";
-        continue;
+
+        if (angle <= 0.0) {
+          std::cout << "Angle must be > 0.\n";
+          continue;
+        }
+        // update orientation
+        robot_orientation_deg += angle;
+        // normalize to [0, 360)
+        robot_orientation_deg = std::fmod(robot_orientation_deg, 360.0);
+        // if negative, wrap around
+        if (robot_orientation_deg < 0.0) robot_orientation_deg += 360.0;
+
+        // output new orientation
+        std::cout << "Robot turned left by " << angle
+                  << " degrees. New orientation: " << robot_orientation_deg
+                  << " degrees\n";
+        break;
       }
-      std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+      case 3: {  // Turn Right
+        double angle{};
+        std::cout << "Enter angle to turn right in degrees (e.g., 45.0): ";
+        // validate input
+        if (!(std::cin >> angle)) {
+          std::cin.clear();
+          std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+          std::cout << "Invalid input. Please enter a valid number.\n";
+          continue;
+        }
+        // check for trailing characters
+        {
+          int ch = std::cin.peek();
+          while (std::isspace(ch) && ch != '\n') {
+            std::cin.get();
+            ch = std::cin.peek();
+          }
+          if (ch != '\n') {
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Invalid input. Please enter a valid number.\n";
+            continue;
+          }
+        }
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-      if (angle <= 0.0) {
-        std::cout << "Angle must be > 0.\n";
-        continue;
+        if (angle <= 0.0) {
+          std::cout << "Angle must be > 0.\n";
+          continue;
+        }
+        // update orientation(turn right means decrease angle)
+        robot_orientation_deg -= angle;
+        // normalize to [0, 360)
+        robot_orientation_deg = std::fmod(robot_orientation_deg, 360.0);
+        // if negative, wrap around
+        if (robot_orientation_deg < 0.0) robot_orientation_deg += 360.0;
+
+        // output new orientation
+        std::cout << "Robot turned right by " << angle
+                  << " degrees. New orientation: " << robot_orientation_deg
+                  << " degrees\n";
+        break;
       }
+      case 4:  // Get Robot Status
+        std::cout << "Robot Status:\n"
+                  << " Position: (" << robot_x_position << ", "
+                  << robot_y_position << ")\n"
+                  << " Orientation: " << robot_orientation_deg << " degrees\n";
+        break;
+      case 5:  // Exit
+        std::cout << "Exiting Robot Simulator. Goodbye!\n";
+        return 0;
+        break;
+      case 6:  // Backward
+      {
+        double distance{};
+        std::cout << "Enter distance to move backward (e.g., 5.5):";
+        // validate input
+        if (!(std::cin >> distance)) {
+          std::cin.clear();
+          std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+          std::cout << "Invalid input. Please enter a valid number.\n";
+          continue;
+        }
+        // check for trailing characters
+        {
+          int ch = std::cin.peek();
+          while (std::isspace(ch) && ch != '\n') {
+            std::cin.get();
+            ch = std::cin.peek();
+          }
+          if (ch != '\n') {
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Invalid input. Please enter a valid number.\n";
+            continue;
+          }
+        }
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-      // 更新角度並正規化到 [0, 360)
-      robot_orientation_deg += (is_left ? angle : -angle);
-      robot_orientation_deg = std::fmod(robot_orientation_deg, 360.0);
-      if (robot_orientation_deg < 0.0) robot_orientation_deg += 360.0;
+        if (distance <= 0.0) {
+          std::cout << "Invalid distance. Please enter a positive number.\n";
+          continue;
+        }
 
-      std::cout << "Turn OK. Orientation: " << robot_orientation_deg << " deg\n";
+        // calculate new position
+        const double angle_rad = robot_orientation_deg * pi / 180.0;
+        robot_x_position -= distance * std::cos(angle_rad);
+        robot_y_position -= distance * std::sin(angle_rad);
 
-    } else if (menu_choice == 4) {
-      // 顯示狀態
-      std::cout << "Status -> x: " << robot_x_position
-                << " m, y: " << robot_y_position
-                << " m, theta: " << robot_orientation_deg << " deg\n";
-
-    } else if (menu_choice == 7) {
-      // Reset Pose（Bonus）
-      robot_x_position = 0.0;
-      robot_y_position = 0.0;
-      robot_orientation_deg = 0.0;
-      std::cout << "Pose reset to (0.00, 0.00, 0.00 deg).\n";
-
-    } else { // menu_choice == 5
-      std::cout << "Goodbye!\n";
-      break;
+        // output new position
+        std::cout << "Robot moved " << distance
+                  << " meters backward. New position: " << "("
+                  << robot_x_position << ", " << robot_y_position << ")\n";
+        break;
+      }
+      case 7:  // Reset Pose
+      {
+        robot_x_position = 0.0;
+        robot_y_position = 0.0;
+        robot_orientation_deg = 0.0;
+        std::cout << "Robot pose has been reset to the origin with 0 degrees "
+                     "orientation.\n";
+        break;
+      }
+      default:  // should not reach here due to prior validation
+        std::cout << "Invalid choice. Please enter a number between 1 and 7.\n";
+        break;
     }
   }
-
+  // should never reach here
   return 0;
 }
