@@ -12,4 +12,6 @@ add_compile_options(-Wall -Wextra)
 # add_subdirectory(week1)
 # add_subdirectory(week2)
 add_subdirectory(week3)
-# add_subdirectory(reading_material)s
+# add_subdirectory(week4)
+
+# add_subdirectory(reading_material)
