@@ -43,3 +43,49 @@
 .vscode/
 build
 .devcontainer/
+
+# -------------------------------------------
+# Sphinx / Read the Docs build artifacts
+# -------------------------------------------
+
+bootstrap_lecture6.sh
+example.txt
+# Built documentation
+docs/_build/
+docs/_autosummary/
+docs/_doctrees/
+docs/_static/assets/
+docs/_static/scripts/
+docs/_static/styles/
+
+# Sphinx environment cache
+docs/.doctrees
+docs/.buildinfo
+docs/.sphinx
+
+# HTML, LaTeX, or PDF outputs
+docs/html/
+docs/latex/
+docs/pdf/
+docs/_build/html/
+docs/_build/latex/
+docs/_build/pdf/
+
+# Temporary and generated files
+*.log
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
+
+# Editor or IDE settings (optional)
+.vscode/
+.idea/
+
+# Python environment (if built inside docs)
+docs/.venv/
+docs/venv/
+__pycache__/
+*.pyc
+
