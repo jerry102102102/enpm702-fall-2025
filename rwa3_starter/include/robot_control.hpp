@@ -1,17 +1,20 @@
 /**
  * @file robot_control.hpp
- * @author your name (you@domain.com)
- * @brief 
- * @version 0.1
- * @date 2025-10-25
- * 
+ * @author Jerry C
+ * @brief Trajectory generation and filtering utilities for the 2-DOF arm.
+ * @version 1.0
+ * @date 2025-10-30
+ *
  * @copyright Copyright (c) 2025
- * 
  */
+
 #pragma once
+
 #include "robot_types.hpp"
-#include <vector>
+
+#include <algorithm>
 #include <functional>
+#include <vector>
 
 //---------------------------------------------------------
 // TODO: interpolate_linear (Task 3, template)
@@ -19,14 +22,19 @@
 // - STARTER does minimal work; you must complete
 // TODO: Remove this block of comment before submission
 //---------------------------------------------------------
+
 /**
- * @brief 
- * 
- * @tparam State 
- * @param start 
- * @param goal 
- * @param alpha 
- * @return State 
+ * @brief Interpolate between two joint states with a clamped alpha parameter.
+ *
+ * The position components are interpolated linearly, while the velocity
+ * components are assigned proportionally to the joint displacement using a
+ * constant gain.
+ *
+ * @tparam State Type exposing theta1/theta2/dtheta1/dtheta2 members.
+ * @param start Initial joint state.
+ * @param goal Target joint state.
+ * @param alpha Interpolation factor (clamped to [0, 1]).
+ * @return State Interpolated joint configuration.
  */
 template <typename State>
 State interpolate_linear(const State& start, const State& goal, double alpha)
@@ -41,10 +49,12 @@ State interpolate_linear(const State& start, const State& goal, double alpha)
     //  - Set dtheta1, dtheta2 proportional to (goal - start)
     //
     // Starter: angles interpolated, velocities placeholder (0)
-    out.theta1 = start.theta1 + alpha * (goal.theta1 - start.theta1);
-    out.theta2 = start.theta2 + alpha * (goal.theta2 - start.theta2);
-    out.dtheta1 = 0.0; // replace with finite-difference or proportional velocity
-    out.dtheta2 = 0.0; // replace with finite-difference or proportional velocity
+    const double delta_theta1 = goal.theta1 - start.theta1;
+    const double delta_theta2 = goal.theta2 - start.theta2;
+    out.theta1 = start.theta1 + alpha * delta_theta1;
+    out.theta2 = start.theta2 + alpha * delta_theta2;
+    out.dtheta1 = k_velocity_gain * delta_theta1;
+    out.dtheta2 = k_velocity_gain * delta_theta2;
     return out;
 }
 
@@ -53,11 +63,13 @@ State interpolate_linear(const State& start, const State& goal, double alpha)
 // - declared here, implemented in .cpp
 // TODO: Remove this block of comment before submission
 //---------------------------------------------------------
+
 /**
- * @brief 
- * 
- * @param traj 
- * @param filter 
+ * @brief Apply an in-place filter to each sample of a trajectory.
+ *
+ * @param traj Trajectory to be modified.
+ * @param filter Unary functor operating on a joint state.
  */
 void apply_filter(std::vector<JointState>& traj,
                   std::function<JointState(const JointState&)> filter);
+

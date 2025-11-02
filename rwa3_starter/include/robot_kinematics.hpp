@@ -1,15 +1,17 @@
 /**
  * @file robot_kinematics.hpp
- * @author your name (you@domain.com)
- * @brief 
- * @version 0.1
- * @date 2025-10-25
- * 
+ * @author Jerry C
+ * @brief Forward kinematics utilities for the planar 2-DOF arm.
+ * @version 1.0
+ * @date 2025-10-30
+ *
  * @copyright Copyright (c) 2025
- * 
  */
+
 #pragma once
+
 #include "robot_types.hpp"
+
 #include <cmath>
 
 //---------------------------------------------------------
@@ -18,19 +20,20 @@
 // - STARTER returns a placeholder; you must implement
 // TODO: Remove this block of comment before submission
 //---------------------------------------------------------
+
 /**
- * @brief 
- * 
- * @tparam State 
- * @param s 
- * @param L1 
- * @param L2 
- * @return EndEffectorPose 
+ * @brief Compute the planar forward kinematics for a two-link manipulator.
+ *
+ * @tparam State Type exposing theta1 and theta2 members.
+ * @param state Joint configuration used for the computation.
+ * @param L1 Length of link 1 [m].
+ * @param L2 Length of link 2 [m].
+ * @return EndEffectorPose Cartesian position of the end-effector.
  */
 template <typename State>
 EndEffectorPose forward_kinematics(const State& s,
-                                   double L1 = kLink1,
-                                   double L2 = kLink2)
+                                   double L1 = k_link1,
+                                   double L2 = k_link2)
 {
     // TODO [Task 2]:
     // Implement the FK equations:
@@ -38,9 +41,9 @@ EndEffectorPose forward_kinematics(const State& s,
     // y = L1*sin(theta1) + L2*sin(theta1 + theta2)
 
     EndEffectorPose pose{};
-    // TODO: complete
-    // pose.x = ??;
-    // pose.y = ??;
+    const double theta12 = s.theta1 + s.theta2;
+    pose.x = L1 * std::cos(s.theta1) + L2 * std::cos(theta12);
+    pose.y = L1 * std::sin(s.theta1) + L2 * std::sin(theta12);
     return pose;
 }
 

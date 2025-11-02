@@ -1,13 +1,13 @@
 /**
  * @file robot_control.cpp
- * @author your name (you@domain.com)
- * @brief 
- * @version 0.1
- * @date 2025-10-25
- * 
+ * @author Jerry C
+ * @brief Implementation of trajectory filtering utilities.
+ * @version 1.0
+ * @date 2025-10-30
+ *
  * @copyright Copyright (c) 2025
- * 
  */
+
 #include "robot_control.hpp"
 
 /*
