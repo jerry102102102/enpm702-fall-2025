@@ -11,6 +11,14 @@ Assignment 3 - Robot Kinematics and Control
 - **Total Points:** 36  
 - **Language:** C++17  
 
+.. admonition:: Changelog
+
+   **Version 1.2.0** (2025-10-30)
+
+   - Simplified the terminal output
+   - Removed shared pointer. Only use `std::unique_ptr`
+   - Updated the pseudocode for lambdas. Both lambdas must be created in the `main()` function
+
 
 ----------------------------------------------------
 Assignment Overview
@@ -305,52 +313,66 @@ Generate intermediate robot states between a start and goal configuration, and a
 
       d\theta \leftarrow \operatorname{sign}(d\theta)\,\min\!\left(|d\theta|,\, 1.0\right)
 
-   **interpolate_linear(start, goal, α) — pseudocode**
+   .. admonition:: Pseudocode: **interpolate_linear(start, goal, α)**
+      :class: pseudocode
 
-   .. code-block:: text
+      .. line-block::
 
-      INPUT: start (theta1, theta2, dtheta1, dtheta2),
-             goal  (theta1, theta2, dtheta1, dtheta2),
-             alpha in [0, 1]
+         INPUT: start (:math:`\theta_1`, :math:`\theta_2`, :math:`d\theta_1`, :math:`d\theta_2`),
+               goal  (:math:`\theta_1`, :math:`\theta_2`, :math:`d\theta_1`, :math:`d\theta_2`),
+               :math:`\alpha` in [0, 1]
 
-      1) alpha <- clamp(alpha, 0, 1)
+         1) :math:`\alpha \leftarrow \text{clamp}(\alpha, 0, 1)`
 
-      2) out.theta1 <- start.theta1 + alpha * (goal.theta1 - start.theta1)
-         out.theta2 <- start.theta2 + alpha * (goal.theta2 - start.theta2)
+         2) :math:`out.\theta_1 \leftarrow \text{start}.\theta_1 + \alpha \times (\text{goal}.\theta_1 - \text{start}.\theta_1)`
+            :math:`out.\theta_2 \leftarrow \text{start}.\theta_2 + \alpha \times (\text{goal}.\theta_2 - \text{start}.\theta_2)`
 
-      3) Δθ1 <- (goal.theta1 - start.theta1)
-         Δθ2 <- (goal.theta2 - start.theta2)
+         3) :math:`\Delta\theta_1 \leftarrow (\text{goal}.\theta_1 - \text{start}.\theta_1)`
+            :math:`\Delta\theta_2 \leftarrow (\text{goal}.\theta_2 - \text{start}.\theta_2)`
 
-      4) Assign velocities proportional to Δθ:
-         out.dtheta1 <- k * Δθ1
-         out.dtheta2 <- k * Δθ2
+         4) Assign velocities proportional to :math:`\Delta\theta`:
+            :math:`out.d\theta_1 \leftarrow k \times \Delta\theta_1`
+            :math:`out.d\theta_2 \leftarrow k \times \Delta\theta_2`
 
-      5) RETURN out
+         5) RETURN :math:`out`
+   
 
-   **apply_filter(traj, filter) — pseudocode**
+   .. admonition:: Pseudocode: **apply_filter(traj, filter)**
+      :class: pseudocode
+      
+      .. line-block::
 
-   .. code-block:: text
+         INPUT: traj: vector of JointState
+                filter: function JointState :math:`\rightarrow` JointState
 
-      INPUT: traj: vector of JointState
-             filter: function JointState -> JointState
+         FOR each index :math:`i` in :math:`[0 \dots \text{traj.size()}-1]`:
+            :math:`\text{traj}[i] \leftarrow \text{filter}(\text{traj}[i])`
 
-      FOR each index i in [0 .. traj.size()-1]:
-          traj[i] <- filter(traj[i])
 
-   **Velocity-limit lambda (used in main) — pseudocode**
+   .. admonition:: Pseudocode **Lambda: clamp_to_limit(v, limit)**
+      :class: pseudocode
+      
+      .. line-block::
 
-   .. code-block:: text
+         IF :math:`v > \text{limit}`:
+            RETURN :math:`\text{limit}`
+         IF :math:`v < -\text{limit}`:
+            RETURN :math:`-\text{limit}`
+         RETURN :math:`v`
 
-      lambda clamp_vel(s: JointState) -> JointState:
-          out <- s
-          out.dtheta1 <- clamp_to_limit(out.dtheta1, limit = 1.0)
-          out.dtheta2 <- clamp_to_limit(out.dtheta2, limit = 1.0)
-          RETURN out
+   .. admonition:: Pseudocode: **Lambda: clamp_vel(s)**
+      :class: pseudocode
+      
+      .. line-block::
 
-      function clamp_to_limit(v, limit):
-          if v >  limit: return  limit
-          if v < -limit: return -limit
-          return v
+         INPUT: s (JointState)
+         RETURNS: JointState
+
+         :math:`out \leftarrow s`
+         :math:`out.d\theta_1 \leftarrow \text{clamp_to_limit}(out.d\theta_1, 1.0)`
+         :math:`out.d\theta_2 \leftarrow \text{clamp_to_limit}(out.d\theta_2, 1.0)`
+         RETURN :math:`out`
+      
 
 
 
@@ -366,12 +388,11 @@ Integrate all components into a single simulation demonstrating motion planning,
 1. Use ``std::make_unique`` to create a vector of ``JointState`` representing the trajectory.
 2. Generate 21 states using ``interpolate_linear()`` (from :math:`\alpha=0` to 1 in steps of 0.05).
 3. Apply the velocity filter using ``apply_filter()``.
-4. Use ``std::make_shared`` to create a vector of ``EndEffectorPose``.
+4. Use ``std::make_unique`` to create a vector of ``EndEffectorPose``.
 5. For each filtered state, compute the end-effector pose using ``forward_kinematics()``.
 6. Print:
 
    - Trajectory size.
-   - Shared pointer reference count.
    - Start and end states (use ``print_joint_state()``).
 
 7. Demonstrate that all resources are released automatically (RAII).
@@ -402,55 +423,63 @@ This is **not graded**, but it is a valuable addition for testing safety and rel
 Example Terminal Output
 ----------------------------------------------------
 
-.. code-block:: text
+.. code-block:: console
+
+   === Robot Kinematics & Control ===
 
    Generating smooth trajectory between:
-   Start  -> θ1 = 0.0000 rad, θ2 = 0.0000 rad
-   Goal   -> θ1 = 0.7854 rad, θ2 = -0.5236 rad
+   Start  -> θ1 = 0.0000 rad | θ2 = 0.0000 rad | dθ1 = 0.0000 rad/s | dθ2 = 0.0000 rad/s
+   Goal   -> θ1 = 0.7854 rad | θ2 = -0.5236 rad | dθ1 = 0.0000 rad/s | dθ2 = 0.0000 rad/s
 
    Trajectory points: 21
-   Shared pose count: 1
-
    Unfiltered Trajectory (every 5th point shown):
-   [0] θ1 = 0.0000 | θ2 = 0.0000 | dθ1 = 0.0000 | dθ2 = 0.0000
-   [5] θ1 = 0.1963 | θ2 = -0.1309 | dθ1 = 0.1963 | dθ2 = -0.1309
-   [10] θ1 = 0.3927 | θ2 = -0.2618 | dθ1 = 0.3927 | dθ2 = -0.2618
-   [15] θ1 = 0.5890 | θ2 = -0.3927 | dθ1 = 0.5890 | dθ2 = -0.3927
-   [20] θ1 = 0.7854 | θ2 = -0.5236 | dθ1 = 0.7854 | dθ2 = -0.5236
+   [0] θ1 = 0.0000 rad | θ2 = 0.0000 rad | dθ1 = 0.7854 rad/s | dθ2 = -0.5236 rad/s
+   [5] θ1 = 0.1963 rad | θ2 = -0.1309 rad | dθ1 = 0.7854 rad/s | dθ2 = -0.5236 rad/s
+   [10] θ1 = 0.3927 rad | θ2 = -0.2618 rad | dθ1 = 0.7854 rad/s | dθ2 = -0.5236 rad/s
+   [15] θ1 = 0.5890 rad | θ2 = -0.3927 rad | dθ1 = 0.7854 rad/s | dθ2 = -0.5236 rad/s
+   [20] θ1 = 0.7854 rad | θ2 = -0.5236 rad | dθ1 = 0.7854 rad/s | dθ2 = -0.5236 rad/s
 
-   Applying velocity-limit filter: |dθ| ≤ 1.0 rad/s
+   Applying velocity-limit filter: |dθ| ≤ 1.0000 rad/s
    -> Filter applied successfully, all values within limits.
 
    Filtered Trajectory (first 5 points):
-   [0] θ1 = 0.0000 | θ2 = 0.0000 | dθ1 = 0.0000 | dθ2 = 0.0000
-   [1] θ1 = 0.0393 | θ2 = -0.0262 | dθ1 = 0.0393 | dθ2 = -0.0262
-   [2] θ1 = 0.0785 | θ2 = -0.0524 | dθ1 = 0.0785 | dθ2 = -0.0524
-   [3] θ1 = 0.1178 | θ2 = -0.0785 | dθ1 = 0.1178 | dθ2 = -0.0785
-   [4] θ1 = 0.1571 | θ2 = -0.1047 | dθ1 = 0.1571 | dθ2 = -0.1047
+   [0] θ1 = 0.0000 rad | θ2 = 0.0000 rad | dθ1 = 0.7854 rad/s | dθ2 = -0.5236 rad/s
+   [1] θ1 = 0.0393 rad | θ2 = -0.0262 rad | dθ1 = 0.7854 rad/s | dθ2 = -0.5236 rad/s
+   [2] θ1 = 0.0785 rad | θ2 = -0.0524 rad | dθ1 = 0.7854 rad/s | dθ2 = -0.5236 rad/s
+   [3] θ1 = 0.1178 rad | θ2 = -0.0785 rad | dθ1 = 0.7854 rad/s | dθ2 = -0.5236 rad/s
+   [4] θ1 = 0.1571 rad | θ2 = -0.1047 rad | dθ1 = 0.7854 rad/s | dθ2 = -0.5236 rad/s
 
    Computing end-effector poses for filtered trajectory...
    Link lengths: L1 = 0.50 m, L2 = 0.30 m
 
-   End-Effector Trajectory (first 10 points):
+   End-Effector Trajectory (all points):
    [0]  x = 0.8000 m,  y = 0.0000 m
-   [1]  x = 0.7997 m,  y = 0.0157 m
-   [2]  x = 0.7988 m,  y = 0.0314 m
-   [3]  x = 0.7972 m,  y = 0.0470 m
-   [4]  x = 0.7950 m,  y = 0.0626 m
-   [5]  x = 0.7921 m,  y = 0.0782 m
-   [6]  x = 0.7886 m,  y = 0.0938 m
-   [7]  x = 0.7844 m,  y = 0.1093 m
-   [8]  x = 0.7796 m,  y = 0.1247 m
-   [9]  x = 0.7742 m,  y = 0.1400 m
-   ...
-   [20] x = 0.7375 m,  y = 0.2721 m
+   [1]  x = 0.7996 m,  y = 0.0236 m
+   [2]  x = 0.7984 m,  y = 0.0471 m
+   [3]  x = 0.7963 m,  y = 0.0705 m
+   [4]  x = 0.7934 m,  y = 0.0939 m
+   [5]  x = 0.7898 m,  y = 0.1172 m
+   [6]  x = 0.7853 m,  y = 0.1403 m
+   [7]  x = 0.7800 m,  y = 0.1632 m
+   [8]  x = 0.7739 m,  y = 0.1859 m
+   [9]  x = 0.7670 m,  y = 0.2083 m
+   [10]  x = 0.7594 m,  y = 0.2305 m
+   [11]  x = 0.7510 m,  y = 0.2524 m
+   [12]  x = 0.7418 m,  y = 0.2739 m
+   [13]  x = 0.7319 m,  y = 0.2951 m
+   [14]  x = 0.7213 m,  y = 0.3159 m
+   [15]  x = 0.7100 m,  y = 0.3363 m
+   [16]  x = 0.6980 m,  y = 0.3563 m
+   [17]  x = 0.6853 m,  y = 0.3758 m
+   [18]  x = 0.6719 m,  y = 0.3948 m
+   [19]  x = 0.6579 m,  y = 0.4132 m
+   [20]  x = 0.6433 m,  y = 0.4312 m
+
 
    Summary
    --------
    • Total joint states: 21
-   • Velocity filter: active (|dθ| ≤ 1.0)
-   • Shared pose vector ref count: 1
-   • RAII cleanup complete - all resources released automatically.
+   • Velocity filter: active (|dθ| ≤ 1.0000)
 
    Program finished successfully.
 
@@ -462,41 +491,182 @@ Code Quality and C++ Guidelines (6 pts)
 Your code will be graded for adherence to **C++ Core Guidelines**:
 
 - No raw pointers (``new`` or ``delete``).
-- Correct ownership semantics using ``unique_ptr`` and ``shared_ptr``.
+- Correct ownership semantics using ``std::unique_ptr``.
 - Const-correctness and pass-by-reference for non-owning parameters.
 - Uniform initialization (``{}``) used consistently.
-- Clean compilation with ``-Wall -Werror -Wextra -Wpedantic``.
+- Clean compilation with ``-Wall -Werror -Wextra -pedantic-errors``.
 - Clear naming, concise comments, and documented units (radians, meters, rad/s).
 
 ----------------------------------------------------
 Evaluation Rubric (36 pts)
 ----------------------------------------------------
 
+Performance Levels (used below)
+-------------------------------
+
+- **Exceeds**: Fully correct, robust, and idiomatic; anticipates edge cases.
+- **Meets**: Correct and idiomatic; minor issues that do not affect correctness.
+- **Partial**: Partially correct or missing important elements.
+- **Insufficient**: Incorrect, incomplete, or non-functional.
+
+.. note::
+   Points for each sub-criterion are **all-or-nothing** unless otherwise noted. “Partial” earns **half** of the listed points for that sub-criterion when applicable.
+
+Task 1 — POD Structs, Defaults, and Printing (6 pts)
+-----------------------------------------------------
+
 .. list-table::
    :header-rows: 1
-   :widths: 25 60 15
+   :widths: 42 43 15
 
-   * - **Section**
-     - **Description**
-     - **Points**
-   * - Task 1
-     - POD structs, default member initializers, and formatted printing
-     - 6
-   * - Task 2
-     - Forward kinematics template implementation
-     - 8
-   * - Task 3
-     - Linear interpolation and velocity filtering
-     - 8
-   * - Task 4
-     - Smart pointers, memory safety, and RAII integration
-     - 8
-   * - Code Quality
-     - Adherence to C++ Core Guidelines and best practices
-     - 6
-   * - **Total**
-     - **Overall Assignment Score**
-     - **36**
+   * - **Sub-criterion**
+     - **Evidence of Exceeds / Meets / Partial / Insufficient**
+     - **Pts**
+   * - POD structs with appropriate fields
+     - *Exceeds/Meets*: Correct fields; no invariants required; trivially copyable design.  
+       *Partial*: Missing a field or uses class features that break POD intent.  
+       *Insufficient*: Wrong or unusable structure.
+     - 2
+   * - Default member initializers for all fields
+     - *Exceeds/Meets*: Sensible defaults set in-class; no uninitialized state.  
+       *Partial*: Defaults incomplete.  
+       *Insufficient*: No defaults; UB risk.
+     - 2
+   * - Formatted printing (readable, labeled, consistent units)
+     - *Exceeds*: Clear labels, alignment, and units; no `std::endl` misuse; newline `'\n'`.  
+       *Meets*: Clear output; minor formatting nits.  
+       *Partial/Insufficient*: Hard to read or missing fields.
+     - 2
+
+Task 2 — Forward Kinematics Template Implementation (8 pts)
+-----------------------------------------------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 42 43 15
+
+   * - **Sub-criterion**
+     - **Evidence of Exceeds / Meets / Partial / Insufficient**
+     - **Pts**
+   * - Correct FK equations and frame conventions
+     - *Exceeds/Meets*: Angles and link lengths used with correct trigonometry and ordering; frames documented.  
+       *Partial*: Minor sign or frame confusion with test mismatch.  
+       *Insufficient*: Incorrect mapping.
+     - 3
+   * - Generic template design (types, constants)
+     - *Exceeds*: Template parameters or `auto` enable `float`/`double`; no unnecessary casts.  
+       Meets: Works for primary type with clean template signature.  
+       *Partial/Insufficient*: Hard-coded type or broken templating.
+     - 2
+   * - Numerical sanity and edge cases
+     - *Exceeds*: Handles zero angles, extreme values, and boundary inputs; tests or asserts where appropriate.  
+       Meets: Works on nominal cases.  
+       *Partial/Insufficient*: Fails common cases.
+     - 2
+   * - Clear API and documentation
+     - *Exceeds/Meets*: Function name, params, and returned pose are unambiguous; brief comment.  
+       *Partial/Insufficient*: Ambiguous or missing.
+     - 1
+
+Task 3 — Linear Interpolation and Velocity Filtering (8 pts)
+------------------------------------------------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 42 43 15
+
+   * - **Sub-criterion**
+     - **Evidence of Exceeds / Meets / Partial / Insufficient**
+     - **Pts**
+   * - Interpolation correctness with clamped :math:`\\alpha`
+     - *Exceeds/Meets*: Implements `alpha = clamp(alpha, 0, 1)`; linear blend for all fields as specified.  
+       *Partial*: Forgets clamping or a field.  
+       *Insufficient*: Incorrect formula.
+     - 3
+   * - Velocity assignment proportional to :math:`\\Delta\\theta`
+     - *Exceeds/Meets*: Uses `k * Δθ` consistently; rationale or constant visible.  
+       *Partial*: Applies to one joint only or mixes units.  
+       *Insufficient*: Missing or wrong.
+     - 2
+   * - Filter application over trajectory (in-place transform)
+     - *Exceeds/Meets*: Iterates safely over all states; no copies unless required; lambda friendly.  
+       *Partial*: Inefficient copying or off-by-one.  
+       *Insufficient*: Incorrect application.
+     - 2
+   * - Readability and test snippet
+     - *Exceeds/Meets*: Small demo or asserts; clear variable names.  
+       *Partial/Insufficient*: Hard to follow.
+     - 1
+
+Task 4 — Smart Pointers, Safety, and RAII (8 pts)
+--------------------------------------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 42 43 15
+
+   * - **Sub-criterion**
+     - **Evidence of Exceeds / Meets / Partial / Insufficient**
+     - **Pts**
+   * - Correct `std::unique_ptr` ownership
+     - *Exceeds/Meets*: Uses `std::make_unique`; no raw `new` in user code; `reset` only when justified.  
+       *Partial*: Mixed ownership patterns.  
+       *Insufficient*: Leaks or double-delete risks.
+     - 3
+   * - RAII integration and lifetime clarity
+     - *Exceeds/Meets*: Resources released deterministically; no manual `delete`; scopes well defined.  
+       *Partial*: Lifetime unclear.  
+       *Insufficient*: Dangling usage.
+     - 2
+   * - Avoids anti-patterns
+     - *Exceeds/Meets*: No `std::move` into same object; no copying `unique_ptr`; no ``naked`` owning raw pointers.  
+       *Partial/Insufficient*: One or more anti-patterns present.
+     - 2
+   * - Minimal, focused example
+     - *Exceeds/Meets*: Short example that compiles; comments explain ownership.  
+       *Partial/Insufficient*: Confusing or non-compiling.
+     - 1
+
+Code Quality — C++ Core Guidelines and Best Practices (6 pts)
+-------------------------------------------------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 42 43 15
+
+   * - **Checklist**
+     - **Evidence**
+     - **Pts**
+   * - Warnings clean: `-Wall -Wextra -pedantic-errors`
+     - Builds without warnings; uses `'\n'` instead of `std::endl`.
+     - 2
+   * - Naming, constants, and initialization
+     - Consistent snake_case for vars; `constexpr` or `const` for magic numbers; uniform initialization `{}`.
+     - 2
+   * - Documentation and structure
+     - Doxygen header present; files named per spec; functions short and single-purpose.
+     - 2
+
+Deductions (Flat)
+-----------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 75 25
+   :class: deductions-table
+
+   * - **Issue**
+     - **Penalty**
+   * - Wrong file naming or extra files in archive
+     - −4 pts each
+   * - Project does not compile or compiles with warnings/errors
+     - −5 pts
+   * - Missing or incomplete Doxygen header
+     - −3 pts
+   * - Late submission (UMD policy)
+     - 20% per day (max 3 days); after 3 days, 0
+
+
 
 ----------------------------------------------------
 Learning Outcomes
