@@ -30,18 +30,18 @@ int main() {
   // Set output formatting for floating-point values
   std::cout << std::fixed << std::setprecision(4);
   std::cout << "Generating smooth trajectory between:\n";
-  std::cout << "Start  -> θ1 = " << start.theta1
-            << " rad | θ2 = " << start.theta2
-            << " rad | dθ1 = " << start.dtheta1
-            << " rad/s | dθ2 = " << start.dtheta2 << " rad/s\n";
-  std::cout << "Goal   -> θ1 = " << goal.theta1 << " rad | θ2 = " << goal.theta2
-            << " rad | dθ1 = " << goal.dtheta1
-            << " rad/s | dθ2 = " << goal.dtheta2 << " rad/s\n\n";
+  // Display start and goal joint states
+  std::cout << "Start  ->";
+  print_joint_state(start);
+  std::cout << "Goal   ->";
+  print_joint_state(goal);
+  std::cout << '\n';
   // Use uniuque_ptr to manage trajectory memory
   auto traj = std::make_unique<std::vector<JointState>>();
   // reserve space ahead of time
   traj->reserve(k_num_samples);
-  // Store raw interpolated trajectory
+  // Store raw interpolated trajectory(not using print_joint_state since they
+  // are a little different)
   std::vector<JointState> raw_traj;
   raw_traj.reserve(k_num_samples);
   // Lambda to clamp joint angles within limits
@@ -69,9 +69,10 @@ int main() {
   }
   // Display unfiltered trajectory summary
   std::cout << "Trajectory points: " << raw_traj.size() << '\n';
-  std::cout << "Unfiltered Trajectory (every 5th point shown):\n";
+  std::cout << "Unfiltered Trajectory (every 5th point shown):\n\n";
   for (std::size_t i = 0; i < raw_traj.size(); i += 5) {
     const auto& s = raw_traj[i];
+    std::cout << '[' << i << "] ";
     print_joint_state(s);
   }
 
@@ -113,6 +114,7 @@ int main() {
   const std::size_t samples_to_show{5};
   for (std::size_t i = 0; i < samples_to_show; ++i) {
     const auto& s = (*traj)[i];
+    std::cout << '[' << i << "]";
     print_joint_state(s);
   }
   // Use unique_ptr to manage end-effector poses memory
